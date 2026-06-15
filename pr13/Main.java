@@ -1,7 +1,7 @@
 import java.io.*;
 import java.util.Scanner;
 
-public class SimpleTextEditor {
+public class Main {
 
     static String fileName = "text.txt";
     static Scanner scanner = new Scanner(System.in);
@@ -19,7 +19,7 @@ public class SimpleTextEditor {
 
                 switch (choice) {
                     case 1:
-                        writeToFile();
+                        writeMultipleLines();
                         break;
                     case 2:
                         readFile();
@@ -45,35 +45,31 @@ public class SimpleTextEditor {
     }
 
     public static void showMenu() {
-        System.out.println("\n------ Текстовий редактор ------");
-        System.out.println("1 - Записати рядки у файл");
-        System.out.println("2 - Прочитати весь файл");
-        System.out.println("3 - Прочитати діапазон рядків");
-        System.out.println("4 - Вставити рядок у потрібне місце");
+        System.out.println("\n--- Текстовий редактор ---");
+        System.out.println("1 - Додати декілька рядків");
+        System.out.println("2 - Прочитати увесь файл");
+        System.out.println("3 - Вивести діапазон рядків");
+        System.out.println("4 - Вставити рядок у вибране місце");
         System.out.println("5 - Вийти");
         System.out.print("Ваш вибір: ");
     }
 
-
-    public static void writeToFile() {
-
-        System.out.print("Скільки рядків записати? ");
-        int count = scanner.nextInt();
-        scanner.nextLine();
-
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter(fileName, true))) {
+    public static void writeMultipleLines() {
+        try {
+            System.out.print("Скільки рядків додати: ");
+            int count = scanner.nextInt();
+            scanner.nextLine();
 
             int lineNumber = countLines() + 1;
 
-            for (int i = 0; i < count; i++) {
-
-                System.out.print(lineNumber + ": ");
-                String line = scanner.nextLine();
-
-                writer.write(line);
-                writer.newLine();
-
-                lineNumber++;
+            try (BufferedWriter writer = new BufferedWriter(new FileWriter(fileName, true))) {
+                for (int i = 0; i < count; i++) {
+                    System.out.print(lineNumber + " | ");
+                    String line = scanner.nextLine();
+                    writer.write(line);
+                    writer.newLine();
+                    lineNumber++;
+                }
             }
 
             System.out.println("Запис завершено.");
@@ -83,13 +79,12 @@ public class SimpleTextEditor {
         }
     }
 
-
     public static void readFile() {
 
         File file = new File(fileName);
 
         if (!file.exists()) {
-            System.out.println("Файл не існує.");
+            System.out.println("Файл ще не створено.");
             return;
         }
 
@@ -99,7 +94,7 @@ public class SimpleTextEditor {
             int number = 1;
 
             while ((line = reader.readLine()) != null) {
-                System.out.println(number + ": " + line);
+                System.out.println(number + " | " + line);
                 number++;
             }
 
@@ -108,28 +103,30 @@ public class SimpleTextEditor {
         }
     }
 
-
     public static void readRange() {
 
-        System.out.print("Початковий рядок: ");
-        int start = scanner.nextInt();
+        try {
+            System.out.print("Початковий рядок: ");
+            int start = scanner.nextInt();
 
-        System.out.print("Кінцевий рядок: ");
-        int end = scanner.nextInt();
-        scanner.nextLine();
+            System.out.print("Кінцевий рядок: ");
+            int end = scanner.nextInt();
+            scanner.nextLine();
 
-        try (BufferedReader reader = new BufferedReader(new FileReader(fileName))) {
+            try (BufferedReader reader = new BufferedReader(new FileReader(fileName))) {
 
-            String line;
-            int number = 1;
+                String line;
+                int number = 1;
 
-            while ((line = reader.readLine()) != null) {
+                while ((line = reader.readLine()) != null) {
 
-                if (number >= start && number <= end) {
-                    System.out.println(number + ": " + line);
+                    if (number >= start && number <= end) {
+                        System.out.println(number + " | " + line);
+                    }
+
+                    number++;
                 }
 
-                number++;
             }
 
         } catch (IOException e) {
@@ -139,36 +136,39 @@ public class SimpleTextEditor {
 
     public static void insertLine() {
 
-        System.out.print("У який рядок вставити? ");
-        int position = scanner.nextInt();
-        scanner.nextLine();
+        int totalLines = countLines();
 
-        System.out.print("Введіть текст: ");
-        String newLine = scanner.nextLine();
+        if (totalLines == 0) {
+            System.out.println("Файл порожній.");
+            return;
+        }
 
         try {
 
-            int count = countLines();
-
-            String[] lines = new String[count + 1];
-
-            int index = 0;
+            String[] lines = new String[totalLines];
 
             try (BufferedReader reader = new BufferedReader(new FileReader(fileName))) {
 
                 String line;
+                int i = 0;
 
                 while ((line = reader.readLine()) != null) {
-                    lines[index] = line;
-                    index++;
+                    lines[i] = line;
+                    i++;
                 }
             }
 
-            if (position < 1)
-                position = 1;
+            System.out.print("У який рядок вставити текст: ");
+            int position = scanner.nextInt();
+            scanner.nextLine();
 
-            if (position > count + 1)
-                position = count + 1;
+            if (position < 1 || position > totalLines) {
+                System.out.println("Невірний номер рядка.");
+                return;
+            }
+
+            System.out.print(position + " | ");
+            String newLine = scanner.nextLine();
 
             try (BufferedWriter writer = new BufferedWriter(new FileWriter(fileName))) {
 
@@ -180,11 +180,10 @@ public class SimpleTextEditor {
                 writer.write(newLine);
                 writer.newLine();
 
-                for (int i = position - 1; i < count; i++) {
+                for (int i = position - 1; i < totalLines; i++) {
                     writer.write(lines[i]);
                     writer.newLine();
                 }
-
             }
 
             System.out.println("Рядок вставлено.");
@@ -198,26 +197,19 @@ public class SimpleTextEditor {
 
         int count = 0;
 
-        File file = new File(fileName);
-
-        if (!file.exists())
-            return 0;
-
-        try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
+        try (BufferedReader reader = new BufferedReader(new FileReader(fileName))) {
 
             while (reader.readLine() != null) {
                 count++;
             }
 
         } catch (IOException e) {
-            System.out.println("Помилка.");
         }
 
         return count;
     }
 
     public static void exitEditor() {
-        System.out.println("Вихід...");
+        System.out.println("Вихід з редактора...");
     }
-
 }
